@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!-- adjusted with an enormous amount of help from https://bl.ocks.org/mbostock/4062045 -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Force layout</title>
+		<script type="text/javascript" src="d3.min.js"></script>
+		<style type="text/css">
+			/* No style rules here yet */
+		</style>
+	</head>
+	<body>
+		<script type="text/javascript">
+			//Width and height
+			var w = 500;
+			var h = 300;
+			
+			//Original data
+			var dataset = {
+				nodes: [
+					{ name: 0 },
+					{ name: 1 },
+					{ name: 2 },
+					{ name: 3 },
+					{ name: 4 },
+					{ name: 5 },
+					{ name: 6 },
+					{ name: 7 },
+					{ name: 8 },
+					{ name: 9 }
+				],
+				edges: [
+					{ source: 0, target: 1 },
+					{ source: 0, target: 2 },
+					{ source: 0, target: 3 },
+					{ source: 0, target: 4 },
+					{ source: 1, target: 5 },
+					{ source: 2, target: 5 },
+					{ source: 2, target: 5 },
+					{ source: 3, target: 4 },
+					{ source: 5, target: 8 },
+					{ source: 5, target: 9 },
+					{ source: 6, target: 7 },
+					{ source: 7, target: 8 },
+					{ source: 8, target: 9 }
+				]
+			};
+			
+			//Easy colors accessible via a 10-step ordinal scale
+			var colors = d3.scaleOrdinal(d3.schemeCategory20);
+
+			//Create SVG element
+			var svg = d3.select("body")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+	
+			//Set up a force simulation
+			var simulation = d3.forceSimulation()
+						  .force("link", d3.forceLink().id(function(d) { return d.name; }))
+						  .force("charge", d3.forceManyBody())
+						  .force("center", d3.forceCenter(w/2, h/2));
+
+			//Create edges as lines
+			var edges = svg.selectAll("line")
+				.data(dataset.edges)
+				.enter()
+				.append("line")
+				.style("stroke", "#ccc")
+				.style("stroke-width", 1);
+			
+			//Create nodes as circles
+			var nodes = svg.selectAll("circle")
+				.data(dataset.nodes)
+				.enter()
+				.append("circle")
+				.attr("r", 10)
+				.style("fill", function(d, i) {
+					return colors(i);
+				})
+				.call(d3.drag()
+				          .on("start", dragstarted)
+				          .on("drag", dragged)
+				          .on("end", dragended));
+			
+			simulation.nodes(dataset.nodes)
+				.on("tick",ticked);
+		
+			simulation.force("link")
+				.links(dataset.edges);
+		
+			//Every time the simulation "ticks", this will be called
+			function ticked() {
+				edges.attr("x1", function(d) { return d.source.x; })
+					 .attr("y1", function(d) { return d.source.y; })
+					 .attr("x2", function(d) { return d.target.x; })
+					 .attr("y2", function(d) { return d.target.y; });
+			
+				nodes.attr("cx", function(d) { return d.x; })
+					 .attr("cy", function(d) { return d.y; });
+			};
+
+			function dragstarted(d) {
+				  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+				  d.fx = d.x;
+				  d.fy = d.y;
+				}
+
+			function dragged(d) {
+				  d.fx = d3.event.x;
+				  d.fy = d3.event.y;
+				}
+
+			function dragended(d) {
+				  if (!d3.event.active) simulation.alphaTarget(0);
+				  d.fx = null;
+				  d.fy = null;
+				}
+		</script>
+	</body>
+</html>
